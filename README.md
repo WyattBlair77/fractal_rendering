@@ -1,5 +1,5 @@
 # fractal_rendering
-Helping a friend understand how fractals are closely related to recursion.
+Helping a friend understand how fractals are closely related to recursion. Currently set to generate the Koch curve. I plan to eventually add a directory containing many different recursive functions, each of which generate a different fractal, which main.py will call in it's curve(...) function. 
 
 # uses two functions:
 - curve(current_curve, current_level, desired_level):
