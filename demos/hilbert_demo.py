@@ -1,4 +1,5 @@
 import sys
+from matplotlib import cm
 
 sys.path.append('../')
 
@@ -23,5 +24,6 @@ for desired_recursion_level in range(12):
         hilbert_curve, 
         init_pos=init_pos, 
         desired_recursion_level=desired_recursion_level, 
-        speed=0
+        speed=0,
+        cmap=cm.get_cmap('gist_rainbow'),
     )
