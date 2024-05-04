@@ -6,3 +6,6 @@ The only thing the class needs is an update function. This function takes a list
 
 # Then render the fractal
 Then simply pass the curve and the desired recursion limit into the `draw_fractal` function.
+
+# Demo images
+![Hilbert Curve](./hilbert.png)
