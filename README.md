@@ -1,10 +1,8 @@
 # fractal_rendering
 Helping a friend understand how fractals are closely related to recursion. Currently set to generate the Koch curve. I plan to eventually add a directory containing many different recursive functions, each of which generate a different fractal, which main.py will call in it's curve(...) function. 
 
-# uses two functions:
-- curve(current_curve, current_level, desired_level):
-generates a curve, which I define as a list of dictionaries (each dictionary representing an edge on the fractal) like this:
-[{'length': int, 'angle': int (degrees)}, ...]
+# First define the fractal as an extension of the `Fractal` class
+The only thing the class needs is an update function. This function takes a list of edges in and returns the new list of edges based on the rule set that that the specific fractal uses on each iteration.
 
-- draw_curve(curve, init_pos):
-draws the curve which it is passed using the turtle library
+# Then render the fractal
+Then simply pass the curve and the desired recursion limit into the `draw_fractal` function.

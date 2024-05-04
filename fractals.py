@@ -160,7 +160,6 @@ class HilbertCurve(Fractal):
         
         # based on this very helpful diagram: https://en.wikipedia.org/wiki/Hilbert_curve#/media/File:Hilbert_curve_production_rules!.svg
         angles = np.array([edge['angle'] for edge in edges])
-        connector_next = False
 
         new_edges = []
         i = 0
