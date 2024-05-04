@@ -20,7 +20,7 @@ class Fractal:
 
     def reset(self):
 
-        self.edges = [{'length': self.init_length, 'angle': self.init_angle}]
+        self.edges = self.init_edges
         self.current_recursion_level = 0
 
     def update(self):
