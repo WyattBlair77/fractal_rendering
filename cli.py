@@ -177,7 +177,7 @@ def run_fractal_demo(fractal_class, fractal_name, args, init_length=10, **fracta
         init_length: Initial length for fractal
         **fractal_kwargs: Additional kwargs for fractal constructor
     """
-    from rendering_pygame import draw_fractal, save_fractal, save_fractal_video
+    from rendering_pygame import draw_fractal, save_fractal, save_fractal_video, save_multilevel_video
 
     levels = parse_levels(args.level)
     cmap = get_colormap(args.cmap)
@@ -185,12 +185,38 @@ def run_fractal_demo(fractal_class, fractal_name, args, init_length=10, **fracta
     background_color = parse_color(args.background, BACKGROUND_PRESETS)
     line_color = parse_color(args.line_color, LINE_COLOR_PRESETS) if args.line_color else None
 
+    if args.export == 'mp4' and len(levels) > 1:
+        # Multiple levels -> single stitched video
+        if args.output:
+            output_file = args.output
+        else:
+            level_str = '_'.join(str(l) for l in levels)
+            output_file = f"{fractal_name}_levels_{level_str}.mp4"
+
+        save_multilevel_video(
+            fractal_class=fractal_class,
+            levels=levels,
+            init_length=init_length,
+            fractal_kwargs=fractal_kwargs,
+            output_file=output_file,
+            size=window_size,
+            line_width=args.line_width,
+            cmap=cmap,
+            background_color=background_color,
+            line_color=line_color,
+            edges_per_frame=args.edges_per_frame,
+            duration=args.duration,
+            fps=args.fps,
+        )
+        print(f"Saved: {output_file}")
+        return
+
     for level in levels:
         # Create fresh fractal instance for each level
         fractal = fractal_class(init_length, **fractal_kwargs)
 
         if args.export == 'png':
-            # Export to PNG
+            # Export to PNG (separate file per level)
             if args.output:
                 output_file = args.output if len(levels) == 1 else f"{args.output.rsplit('.', 1)[0]}_level{level}.png"
             else:
@@ -210,9 +236,9 @@ def run_fractal_demo(fractal_class, fractal_name, args, init_length=10, **fracta
             print(f"Saved: {output_file}")
 
         elif args.export == 'mp4':
-            # Export to MP4
+            # Single level MP4
             if args.output:
-                output_file = args.output if len(levels) == 1 else f"{args.output.rsplit('.', 1)[0]}_level{level}.mp4"
+                output_file = args.output
             else:
                 output_file = f"{fractal_name}_level{level}.mp4"
 

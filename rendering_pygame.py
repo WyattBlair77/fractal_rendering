@@ -385,3 +385,111 @@ def save_fractal_video(fractal, init_pos, desired_recursion_level,
 
     out.release()
     print(f'--Saved to {output_file} ({frame_count + hold_frames} frames)--')
+
+
+def save_multilevel_video(fractal_class, levels, init_length, fractal_kwargs,
+                          output_file='fractal_levels.mp4', size=(900, 900),
+                          line_width=1, cmap=None, background_color=(0, 0, 0), line_color=None,
+                          padding=50, edges_per_frame=None, duration=None, fps=60):
+    """
+    Render multiple fractal levels into a single MP4 video, stitched together.
+
+    Args:
+        fractal_class: The fractal class to instantiate
+        levels: List of recursion levels to render
+        init_length: Initial length for fractal
+        fractal_kwargs: Additional kwargs for fractal constructor
+        output_file: Output filename (MP4)
+        size: (width, height) of output video
+        line_width: Thickness of lines
+        cmap: Matplotlib colormap
+        background_color: RGB tuple for background
+        line_color: Solid line color (overrides cmap)
+        padding: Padding from edges
+        edges_per_frame: Edges drawn per frame (overrides duration)
+        duration: Target duration in seconds PER LEVEL
+        fps: Frames per second of output video
+    """
+    try:
+        import cv2
+    except ImportError:
+        print("Error: opencv-python is required for MP4 export.")
+        print("Install with: pip install opencv-python")
+        return
+
+    # Initialize video writer
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_file, fourcc, fps, size)
+
+    total_frame_count = 0
+
+    for level_idx, level in enumerate(levels):
+        print(f'\n--Level {level} ({level_idx + 1}/{len(levels)})--')
+
+        # Create fresh fractal instance for each level
+        fractal = fractal_class(init_length, **fractal_kwargs)
+
+        print('--Making Fractal--')
+        edges = fractal.generate(desired_recursion_level=level)
+
+        print('--Computing Coordinates--')
+        coords = fractal.compute_coordinates(edges, start_pos=(0, 0))
+        n = len(coords) - 1
+
+        # Calculate edges_per_frame from duration if specified (per level)
+        level_edges_per_frame = edges_per_frame
+        if level_edges_per_frame is not None:
+            pass
+        elif duration is not None and duration > 0:
+            total_frames = int(duration * fps)
+            level_edges_per_frame = max(1, n // total_frames)
+            print(f'--Target duration: {duration}s ({level_edges_per_frame} edges/frame)--')
+        else:
+            # Default: ~2 seconds per level
+            level_edges_per_frame = max(1, n // (fps * 2))
+
+        # Scale to fit
+        coords = scale_to_window(coords, size, padding)
+
+        # Pre-compute colors (BGR for OpenCV)
+        if line_color is not None:
+            colors = [line_color[::-1]] * n
+        elif cmap is not None:
+            colors = [tuple(int(c * 255) for c in cmap(i / n)[:3])[::-1] for i in range(n)]
+        else:
+            colors = [(255, 255, 255)] * n
+
+        # Create initial frame with background
+        frame = np.zeros((size[1], size[0], 3), dtype=np.uint8)
+        frame[:] = background_color[::-1]  # BGR
+
+        print(f'--Recording {n} edges--')
+
+        # Draw frames progressively
+        drawn_edges = 0
+        frame_count = 0
+
+        while drawn_edges < n:
+            end_idx = min(drawn_edges + level_edges_per_frame, n)
+
+            for i in range(drawn_edges, end_idx):
+                start = (int(coords[i][0]), int(coords[i][1]))
+                end = (int(coords[i + 1][0]), int(coords[i + 1][1]))
+                cv2.line(frame, start, end, colors[i], line_width)
+
+            out.write(frame)
+            drawn_edges = end_idx
+            frame_count += 1
+
+        # Hold final frame for 1 second between levels (2 seconds for last level)
+        hold_seconds = 2 if level_idx == len(levels) - 1 else 1
+        hold_frames = fps * hold_seconds
+        for _ in range(hold_frames):
+            out.write(frame)
+
+        total_frame_count += frame_count + hold_frames
+        print(f'--Level {level} complete ({frame_count + hold_frames} frames)--')
+
+    out.release()
+    total_duration = total_frame_count / fps
+    print(f'\n--Saved to {output_file} ({total_frame_count} frames, {total_duration:.1f}s total)--')
