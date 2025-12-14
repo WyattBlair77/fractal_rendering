@@ -1,22 +1,17 @@
+#!/usr/bin/env python
 import sys
-from matplotlib import cm
-
 sys.path.append('../')
 
 from fractals import GosperCurve
-from rendering_pygame import draw_fractal
+from cli import create_parser, run_fractal_demo
 
-# Create the Gosper Curve (Flowsnake)
-gosper = GosperCurve(10)
+if __name__ == '__main__':
+    parser = create_parser('Gosper Curve (Flowsnake)', default_level=5, default_cmap='cool')
+    args = parser.parse_args()
 
-# Render - hexagonal space-filling curve with 60-degree angles
-# Levels 4-6 work well (grows very fast!)
-draw_fractal(
-    gosper,
-    init_pos=(0, 0),
-    desired_recursion_level=5,
-    window_size=(900, 900),
-    edges_per_frame=200,
-    cmap=cm.get_cmap('cool'),
-    line_width=1,
-)
+    run_fractal_demo(
+        fractal_class=GosperCurve,
+        fractal_name='gosper',
+        args=args,
+        init_length=10,
+    )

@@ -1,22 +1,17 @@
+#!/usr/bin/env python
 import sys
-from matplotlib import cm
-
 sys.path.append('../')
 
 from fractals import DragonCurve
-from rendering_pygame import draw_fractal
+from cli import create_parser, run_fractal_demo
 
-# Create the Dragon Curve
-dragon = DragonCurve(10)
+if __name__ == '__main__':
+    parser = create_parser('Dragon Curve', default_level=14, default_cmap='plasma')
+    args = parser.parse_args()
 
-# Render - the dragon curve looks best at levels 12-16
-# Press SPACE to instantly complete, ESC to exit
-draw_fractal(
-    dragon,
-    init_pos=(0, 0),
-    desired_recursion_level=14,
-    window_size=(900, 900),
-    edges_per_frame=500,
-    cmap=cm.get_cmap('plasma'),
-    line_width=1,
-)
+    run_fractal_demo(
+        fractal_class=DragonCurve,
+        fractal_name='dragon',
+        args=args,
+        init_length=10,
+    )

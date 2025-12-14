@@ -1,22 +1,17 @@
+#!/usr/bin/env python
 import sys
-from matplotlib import cm
-
 sys.path.append('../')
 
 from fractals import MooreCurve
-from rendering_pygame import draw_fractal
+from cli import create_parser, run_fractal_demo
 
-# Create the Moore Curve (closed-loop Hilbert variant)
-moore = MooreCurve(10)
+if __name__ == '__main__':
+    parser = create_parser('Moore Curve', default_level=6, default_cmap='gist_rainbow')
+    args = parser.parse_args()
 
-# Render - forms a complete closed loop, unlike Hilbert
-# Levels 5-7 work well
-draw_fractal(
-    moore,
-    init_pos=(0, 0),
-    desired_recursion_level=6,
-    window_size=(900, 900),
-    edges_per_frame=200,
-    cmap=cm.get_cmap('gist_rainbow'),
-    line_width=1,
-)
+    run_fractal_demo(
+        fractal_class=MooreCurve,
+        fractal_name='moore',
+        args=args,
+        init_length=10,
+    )

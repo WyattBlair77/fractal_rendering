@@ -1,22 +1,28 @@
+#!/usr/bin/env python
 import sys
-from matplotlib import cm
-
 sys.path.append('../')
 
 from fractals import KochCurve
-from rendering_pygame import draw_fractal
+from cli import create_parser, run_fractal_demo
 
-# Create Koch Curve
-init_length = 500
-koch_curve = KochCurve(init_length, init_angle=0)
+# KochCurve needs init_angle as well, so we use a wrapper
+class KochCurveWrapper:
+    def __init__(self, init_length):
+        self._curve = KochCurve(init_length, init_angle=0)
 
-# Render with Pygame
-draw_fractal(
-    koch_curve,
-    init_pos=(0, 0),
-    desired_recursion_level=12,
-    window_size=(900, 900),
-    edges_per_frame=200,
-    cmap=cm.get_cmap('gist_rainbow'),
-    line_width=1,
-)
+    def generate(self, desired_recursion_level):
+        return self._curve.generate(desired_recursion_level)
+
+    def compute_coordinates(self, edges, start_pos=(0, 0)):
+        return self._curve.compute_coordinates(edges, start_pos)
+
+if __name__ == '__main__':
+    parser = create_parser('Koch Curve', default_level=12, default_cmap='gist_rainbow')
+    args = parser.parse_args()
+
+    run_fractal_demo(
+        fractal_class=KochCurveWrapper,
+        fractal_name='koch',
+        args=args,
+        init_length=500,
+    )
