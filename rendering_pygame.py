@@ -72,19 +72,44 @@ def draw_fractal(fractal, init_pos, desired_recursion_level,
     last_mouse_pos = None
     window_center = (window_size[0] / 2, window_size[1] / 2)
 
-    def apply_view_transform(coord):
-        """Transform a coordinate based on current zoom and pan."""
-        x = (coord[0] - window_center[0]) * zoom + window_center[0] + pan_offset[0]
-        y = (coord[1] - window_center[1]) * zoom + window_center[1] + pan_offset[1]
-        return (int(x), int(y))
+    # Cached surface for fast pan/zoom (rendered at 1x scale)
+    # We use a larger surface to allow some zoom without quality loss
+    cache_scale = 2.0  # Render at 2x resolution for better zoom quality
+    cache_size = (int(window_size[0] * cache_scale), int(window_size[1] * cache_scale))
+    fractal_cache = pygame.Surface(cache_size)
+    fractal_cache.fill(background_color)
+    cache_valid = False
 
-    def redraw_all():
-        """Redraw entire fractal with current view transform."""
-        screen.fill(background_color)
+    def render_to_cache():
+        """Render the full fractal to the cache surface at high resolution."""
+        nonlocal cache_valid
+        fractal_cache.fill(background_color)
+        # Scale coordinates to cache size
+        scale_factor = cache_scale
         for i in range(n):
-            start = apply_view_transform(coords[i])
-            end = apply_view_transform(coords[i + 1])
-            pygame.draw.line(screen, colors[i], start, end, max(1, int(line_width * zoom)))
+            start = (int(coords[i][0] * scale_factor), int(coords[i][1] * scale_factor))
+            end = (int(coords[i + 1][0] * scale_factor), int(coords[i + 1][1] * scale_factor))
+            pygame.draw.line(fractal_cache, colors[i], start, end, max(1, int(line_width * scale_factor)))
+        cache_valid = True
+
+    def blit_cached_view():
+        """Blit the cached surface to screen with current zoom and pan."""
+        screen.fill(background_color)
+
+        # The cached surface is at cache_scale resolution
+        # At zoom=1.0, we want it to display at window_size
+        scaled_size = (int(window_size[0] * zoom), int(window_size[1] * zoom))
+
+        # Scale the cached surface
+        if scaled_size[0] > 0 and scaled_size[1] > 0:
+            scaled_surface = pygame.transform.smoothscale(fractal_cache, scaled_size)
+
+            # Position: pan_offset is the top-left corner offset from centered position
+            pos_x = int(pan_offset[0])
+            pos_y = int(pan_offset[1])
+
+            screen.blit(scaled_surface, (pos_x, pos_y))
+
         pygame.display.flip()
 
     def update_caption():
@@ -126,25 +151,6 @@ def draw_fractal(fractal, init_pos, desired_recursion_level,
                 if event.button == 1:  # Left click
                     dragging = True
                     last_mouse_pos = event.pos
-                elif event.button == 4:  # Scroll up - zoom in
-                    mouse_x, mouse_y = event.pos
-                    # Zoom centered on mouse position
-                    old_zoom = zoom
-                    zoom *= 1.1
-                    # Adjust pan to keep mouse position fixed
-                    pan_offset[0] = mouse_x - (mouse_x - pan_offset[0]) * (zoom / old_zoom)
-                    pan_offset[1] = mouse_y - (mouse_y - pan_offset[1]) * (zoom / old_zoom)
-                    needs_redraw = True
-                    update_caption()
-                elif event.button == 5:  # Scroll down - zoom out
-                    mouse_x, mouse_y = event.pos
-                    old_zoom = zoom
-                    zoom *= 0.9
-                    # Adjust pan to keep mouse position fixed
-                    pan_offset[0] = mouse_x - (mouse_x - pan_offset[0]) * (zoom / old_zoom)
-                    pan_offset[1] = mouse_y - (mouse_y - pan_offset[1]) * (zoom / old_zoom)
-                    needs_redraw = True
-                    update_caption()
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     dragging = False
@@ -162,27 +168,33 @@ def draw_fractal(fractal, init_pos, desired_recursion_level,
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 old_zoom = zoom
                 if event.y > 0:  # Scroll up - zoom in
-                    zoom *= 1.1
+                    zoom = min(zoom * 1.1, 50.0)
                 elif event.y < 0:  # Scroll down - zoom out
-                    zoom *= 0.9
+                    zoom = max(zoom * 0.9, 0.1)
                 # Adjust pan to keep mouse position fixed
-                pan_offset[0] = mouse_x - (mouse_x - pan_offset[0]) * (zoom / old_zoom)
-                pan_offset[1] = mouse_y - (mouse_y - pan_offset[1]) * (zoom / old_zoom)
+                zoom_ratio = zoom / old_zoom
+                pan_offset[0] = mouse_x - (mouse_x - pan_offset[0]) * zoom_ratio
+                pan_offset[1] = mouse_y - (mouse_y - pan_offset[1]) * zoom_ratio
                 needs_redraw = True
                 update_caption()
 
-        # Draw batch of edges during initial animation
+        # Draw batch of edges during initial animation (directly to screen)
         if drawn_edges < n:
             end_idx = min(drawn_edges + current_edges_per_frame, n)
             for i in range(drawn_edges, end_idx):
-                start = apply_view_transform(coords[i])
-                end = apply_view_transform(coords[i + 1])
-                pygame.draw.line(screen, colors[i], start, end, max(1, int(line_width * zoom)))
+                start = (int(coords[i][0]), int(coords[i][1]))
+                end = (int(coords[i + 1][0]), int(coords[i + 1][1]))
+                pygame.draw.line(screen, colors[i], start, end, line_width)
 
             drawn_edges = end_idx
             pygame.display.flip()
-        elif needs_redraw:
-            redraw_all()
+
+            # When animation completes, render to cache for smooth pan/zoom
+            if drawn_edges >= n:
+                print('--Caching fractal for smooth navigation--')
+                render_to_cache()
+        elif needs_redraw and cache_valid:
+            blit_cached_view()
             needs_redraw = False
 
         clock.tick(fps)
