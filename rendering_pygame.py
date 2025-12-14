@@ -63,6 +63,36 @@ def draw_fractal(fractal, init_pos, desired_recursion_level,
     pygame.display.set_caption(f'Fractal - Level {desired_recursion_level} ({n} edges)')
     clock = pygame.time.Clock()
 
+    # View transform state
+    zoom = 1.0
+    pan_offset = [0.0, 0.0]
+    dragging = False
+    last_mouse_pos = None
+    window_center = (window_size[0] / 2, window_size[1] / 2)
+
+    def apply_view_transform(coord):
+        """Transform a coordinate based on current zoom and pan."""
+        x = (coord[0] - window_center[0]) * zoom + window_center[0] + pan_offset[0]
+        y = (coord[1] - window_center[1]) * zoom + window_center[1] + pan_offset[1]
+        return (int(x), int(y))
+
+    def redraw_all():
+        """Redraw entire fractal with current view transform."""
+        screen.fill(background_color)
+        for i in range(n):
+            start = apply_view_transform(coords[i])
+            end = apply_view_transform(coords[i + 1])
+            pygame.draw.line(screen, colors[i], start, end, max(1, int(line_width * zoom)))
+        pygame.display.flip()
+
+    def update_caption():
+        """Update window title with zoom level."""
+        zoom_str = f'{zoom:.1f}x' if zoom != 1.0 else ''
+        if zoom_str:
+            pygame.display.set_caption(f'Fractal - Level {desired_recursion_level} ({n} edges) - Zoom: {zoom_str}')
+        else:
+            pygame.display.set_caption(f'Fractal - Level {desired_recursion_level} ({n} edges)')
+
     # Fill background
     screen.fill(background_color)
 
@@ -72,6 +102,7 @@ def draw_fractal(fractal, init_pos, desired_recursion_level,
     drawn_edges = 0
     running = True
     current_edges_per_frame = edges_per_frame
+    needs_redraw = False
 
     while running:
         for event in pygame.event.get():
@@ -83,17 +114,74 @@ def draw_fractal(fractal, init_pos, desired_recursion_level,
                 elif event.key == pygame.K_SPACE:
                     # Space to instantly complete
                     current_edges_per_frame = n
+                elif event.key == pygame.K_r:
+                    # Reset view
+                    zoom = 1.0
+                    pan_offset = [0.0, 0.0]
+                    needs_redraw = True
+                    update_caption()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left click
+                    dragging = True
+                    last_mouse_pos = event.pos
+                elif event.button == 4:  # Scroll up - zoom in
+                    mouse_x, mouse_y = event.pos
+                    # Zoom centered on mouse position
+                    old_zoom = zoom
+                    zoom *= 1.1
+                    # Adjust pan to keep mouse position fixed
+                    pan_offset[0] = mouse_x - (mouse_x - pan_offset[0]) * (zoom / old_zoom)
+                    pan_offset[1] = mouse_y - (mouse_y - pan_offset[1]) * (zoom / old_zoom)
+                    needs_redraw = True
+                    update_caption()
+                elif event.button == 5:  # Scroll down - zoom out
+                    mouse_x, mouse_y = event.pos
+                    old_zoom = zoom
+                    zoom *= 0.9
+                    # Adjust pan to keep mouse position fixed
+                    pan_offset[0] = mouse_x - (mouse_x - pan_offset[0]) * (zoom / old_zoom)
+                    pan_offset[1] = mouse_y - (mouse_y - pan_offset[1]) * (zoom / old_zoom)
+                    needs_redraw = True
+                    update_caption()
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:
+                    dragging = False
+                    last_mouse_pos = None
+            elif event.type == pygame.MOUSEMOTION:
+                if dragging and last_mouse_pos is not None:
+                    dx = event.pos[0] - last_mouse_pos[0]
+                    dy = event.pos[1] - last_mouse_pos[1]
+                    pan_offset[0] += dx
+                    pan_offset[1] += dy
+                    last_mouse_pos = event.pos
+                    needs_redraw = True
+            elif event.type == pygame.MOUSEWHEEL:
+                # Alternative mousewheel handling for some systems
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                old_zoom = zoom
+                if event.y > 0:  # Scroll up - zoom in
+                    zoom *= 1.1
+                elif event.y < 0:  # Scroll down - zoom out
+                    zoom *= 0.9
+                # Adjust pan to keep mouse position fixed
+                pan_offset[0] = mouse_x - (mouse_x - pan_offset[0]) * (zoom / old_zoom)
+                pan_offset[1] = mouse_y - (mouse_y - pan_offset[1]) * (zoom / old_zoom)
+                needs_redraw = True
+                update_caption()
 
-        # Draw batch of edges
+        # Draw batch of edges during initial animation
         if drawn_edges < n:
             end_idx = min(drawn_edges + current_edges_per_frame, n)
             for i in range(drawn_edges, end_idx):
-                start = (int(coords[i][0]), int(coords[i][1]))
-                end = (int(coords[i + 1][0]), int(coords[i + 1][1]))
-                pygame.draw.line(screen, colors[i], start, end, line_width)
+                start = apply_view_transform(coords[i])
+                end = apply_view_transform(coords[i + 1])
+                pygame.draw.line(screen, colors[i], start, end, max(1, int(line_width * zoom)))
 
             drawn_edges = end_idx
             pygame.display.flip()
+        elif needs_redraw:
+            redraw_all()
+            needs_redraw = False
 
         clock.tick(fps)
 
