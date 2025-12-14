@@ -291,6 +291,10 @@ class SierpinskiArrowhead(Fractal):
             init_edges=[{'length': init_length, 'angle': 0}]
         )
 
+    def reset(self):
+        super().reset()
+        self.iteration = 0
+
     def sierpinski_update(self, edges: list[dict]) -> list[dict]:
         new_edges = []
         # Alternate the pattern based on iteration
@@ -313,21 +317,31 @@ class MooreCurve(Fractal):
     """
     The Moore Curve - a variant of the Hilbert curve that forms a closed loop.
     It's a space-filling curve that returns to its starting point.
+
+    L-system definition (from Wikipedia):
+    - Axiom: LFL+F+LFL
+    - L → -RF+LFL+FR-
+    - R → +LF-RFR-FL+
+    - F = draw forward, + = turn right 90°, - = turn left 90°
     """
 
     def __init__(self, init_length):
         self.rules = {
-            'L': 'LFL+F+LFL',
-            'R': 'RFR-F-RFR'
+            'L': '-RF+LFL+FR-',
+            'R': '+LF-RFR-FL+'
         }
         # Start with the Moore curve axiom
-        self.state = '-LFL+F+LFL-'
+        self.state = 'LFL+F+LFL'
         super().__init__(
             init_length=init_length,
             init_angle=0,
             fractal_update_func=self.moore_update,
-            init_edges=self._state_to_edges(init_length, '-LFL+F+LFL-')
+            init_edges=self._state_to_edges(init_length, 'LFL+F+LFL')
         )
+
+    def reset(self):
+        super().reset()
+        self.state = 'LFL+F+LFL'
 
     def _state_to_edges(self, length, state):
         """Convert L-system state string to edge list."""
@@ -374,6 +388,10 @@ class GosperCurve(Fractal):
             fractal_update_func=self.gosper_update,
             init_edges=[{'length': init_length, 'angle': 0}]
         )
+
+    def reset(self):
+        super().reset()
+        self.state = 'A'
 
     def _state_to_edges(self, length, state):
         """Convert L-system state string to edge list."""
