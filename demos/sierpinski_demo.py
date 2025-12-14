@@ -6,7 +6,7 @@ from fractals import SierpinskiArrowhead
 from cli import create_parser, run_fractal_demo
 
 if __name__ == '__main__':
-    parser = create_parser('Sierpinski Arrowhead', default_level=10, default_cmap='magma')
+    parser = create_parser('Sierpinski Arrowhead', default_level=10, default_cmap='gist_rainbow')
     args = parser.parse_args()
 
     run_fractal_demo(

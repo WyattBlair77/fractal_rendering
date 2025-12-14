@@ -6,7 +6,7 @@ from fractals import LevyCCurve
 from cli import create_parser, run_fractal_demo
 
 if __name__ == '__main__':
-    parser = create_parser('Levy C Curve', default_level=14, default_cmap='viridis')
+    parser = create_parser('Levy C Curve', default_level=14, default_cmap='gist_rainbow')
     args = parser.parse_args()
 
     run_fractal_demo(
