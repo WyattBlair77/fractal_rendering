@@ -4,26 +4,24 @@ from matplotlib import cm
 sys.path.append('../')
 
 from fractals import HilbertCurve
-from rendering import draw_fractal 
+from rendering_pygame import draw_fractal
 
-# Set initial conditions:
-init_pos = (-100, -100)
-desired_final_length_size = 5
+# Set initial conditions
+init_pos = (0, 0)
 
-for desired_recursion_level in range(12):
+# Create curve
+hilbert_curve = HilbertCurve(10)
 
-    # infer init_length
-    init_length = 5
-    init_angle = 0
-
-    # create curve
-    hilbert_curve = HilbertCurve(init_length)
-
-    # render curve
-    draw_fractal(
-        hilbert_curve, 
-        init_pos=init_pos, 
-        desired_recursion_level=desired_recursion_level, 
-        speed=0,
-        cmap=cm.get_cmap('gist_rainbow'),
-    )
+# Render curve with Pygame (MUCH faster than turtle!)
+# - edges_per_frame controls animation speed (higher = faster)
+# - Press SPACE to instantly complete the drawing
+# - Press ESC or close window to exit
+draw_fractal(
+    hilbert_curve,
+    init_pos=init_pos,
+    desired_recursion_level=7,
+    window_size=(800, 800),
+    edges_per_frame=200,
+    cmap=cm.get_cmap('gist_rainbow'),
+    line_width=1,
+)

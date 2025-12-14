@@ -3,18 +3,18 @@ from matplotlib import cm
 
 sys.path.append('../')
 
-from fractals import KochCurve
+from fractals import MooreCurve
 from rendering_pygame import draw_fractal
 
-# Create Koch Curve
-init_length = 500
-koch_curve = KochCurve(init_length, init_angle=0)
+# Create the Moore Curve (closed-loop Hilbert variant)
+moore = MooreCurve(10)
 
-# Render with Pygame
+# Render - forms a complete closed loop, unlike Hilbert
+# Levels 5-7 work well
 draw_fractal(
-    koch_curve,
+    moore,
     init_pos=(0, 0),
-    desired_recursion_level=12,
+    desired_recursion_level=6,
     window_size=(900, 900),
     edges_per_frame=200,
     cmap=cm.get_cmap('gist_rainbow'),
