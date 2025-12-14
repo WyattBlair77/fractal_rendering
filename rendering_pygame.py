@@ -5,7 +5,7 @@ import numpy as np
 def draw_fractal(fractal, init_pos, desired_recursion_level,
                  window_size=(800, 800), line_width=1,
                  edges_per_frame=None, duration=None, cmap=None, fps=60,
-                 background_color=(0, 0, 0), auto_scale=True, padding=50):
+                 background_color=(0, 0, 0), line_color=None, auto_scale=True, padding=50):
     """
     Render fractal using Pygame with animated progressive drawing.
 
@@ -52,7 +52,9 @@ def draw_fractal(fractal, init_pos, desired_recursion_level,
         coords[:, 1] = window_size[1] - coords[:, 1]
 
     # Pre-compute colors
-    if cmap is not None:
+    if line_color is not None:
+        colors = [line_color] * n
+    elif cmap is not None:
         colors = [tuple(int(c * 255) for c in cmap(i / n)[:3]) for i in range(n)]
     else:
         colors = [(255, 255, 255)] * n
@@ -222,7 +224,7 @@ def scale_to_window(coords, window_size, padding=50):
 
 def save_fractal(fractal, init_pos, desired_recursion_level,
                  output_file='fractal.png', size=(2000, 2000),
-                 line_width=1, cmap=None, background_color=(0, 0, 0), padding=50):
+                 line_width=1, cmap=None, background_color=(0, 0, 0), line_color=None, padding=50):
     """
     Render fractal to an image file (no animation).
 
@@ -255,7 +257,9 @@ def save_fractal(fractal, init_pos, desired_recursion_level,
     coords = scale_to_window(coords, size, padding)
 
     # Pre-compute colors (BGR for OpenCV)
-    if cmap is not None:
+    if line_color is not None:
+        colors = [line_color[::-1]] * n  # Convert RGB to BGR
+    elif cmap is not None:
         colors = [tuple(int(c * 255) for c in cmap(i / n)[:3])[::-1] for i in range(n)]
     else:
         colors = [(255, 255, 255)] * n
@@ -279,7 +283,7 @@ def save_fractal(fractal, init_pos, desired_recursion_level,
 
 def save_fractal_video(fractal, init_pos, desired_recursion_level,
                        output_file='fractal.mp4', size=(900, 900),
-                       line_width=1, cmap=None, background_color=(0, 0, 0),
+                       line_width=1, cmap=None, background_color=(0, 0, 0), line_color=None,
                        padding=50, edges_per_frame=None, duration=None, fps=60):
     """
     Render fractal animation to MP4 video file.
@@ -329,7 +333,9 @@ def save_fractal_video(fractal, init_pos, desired_recursion_level,
     coords = scale_to_window(coords, size, padding)
 
     # Pre-compute colors (BGR for OpenCV)
-    if cmap is not None:
+    if line_color is not None:
+        colors = [line_color[::-1]] * n  # Convert RGB to BGR
+    elif cmap is not None:
         colors = [tuple(int(c * 255) for c in cmap(i / n)[:3])[::-1] for i in range(n)]
     else:
         colors = [(255, 255, 255)] * n

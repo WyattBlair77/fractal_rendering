@@ -2,6 +2,40 @@ import argparse
 from matplotlib import cm
 
 
+# Color presets
+BACKGROUND_PRESETS = {
+    'black': (0, 0, 0),
+    'white': (255, 255, 255),
+    'dark-gray': (30, 30, 30),
+    'light-gray': (200, 200, 200),
+    'navy': (10, 25, 47),
+    'charcoal': (40, 44, 52),
+}
+
+LINE_COLOR_PRESETS = {
+    'white': (255, 255, 255),
+    'black': (0, 0, 0),
+    'red': (255, 0, 0),
+    'green': (0, 255, 0),
+    'blue': (0, 0, 255),
+    'cyan': (0, 255, 255),
+    'magenta': (255, 0, 255),
+    'yellow': (255, 255, 0),
+    'orange': (255, 165, 0),
+}
+
+
+def parse_color(value, presets):
+    """Parse color from preset name or hex code (#RRGGBB)."""
+    if value in presets:
+        return presets[value]
+    if value.startswith('#') and len(value) == 7:
+        return tuple(int(value[i:i+2], 16) for i in (1, 3, 5))
+    raise argparse.ArgumentTypeError(
+        f"Invalid color: {value}. Use preset name or #RRGGBB hex code."
+    )
+
+
 def create_parser(fractal_name, default_level=5, default_cmap='gist_rainbow'):
     """
     Create a standard argument parser for fractal demos.
@@ -19,13 +53,19 @@ def create_parser(fractal_name, default_level=5, default_cmap='gist_rainbow'):
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python %(prog)s -l 5                # Render at level 5
-  python %(prog)s -l 3,4,5,6          # Render levels 3, 4, 5, 6 sequentially
-  python %(prog)s -l 7 --export png   # Export to PNG
-  python %(prog)s -l 7 --export mp4   # Export to MP4 video
-  python %(prog)s -l 7 -d 30          # Render over 30 seconds
-  python %(prog)s -l 7 -d 10 --export mp4  # 10-second MP4 video
-  python %(prog)s -l 7 -o my_fractal.png   # Custom output filename
+  python %(prog)s -l 5                          # Render at level 5
+  python %(prog)s -l 3,4,5,6                    # Render levels 3, 4, 5, 6 sequentially
+  python %(prog)s -l 7 --export png             # Export to PNG
+  python %(prog)s -l 7 --export mp4             # Export to MP4 video
+  python %(prog)s -l 7 -d 30                    # Render over 30 seconds
+  python %(prog)s -l 7 -d 10 --export mp4       # 10-second MP4 video
+  python %(prog)s -l 7 -o my_fractal.png        # Custom output filename
+
+Color options:
+  python %(prog)s -l 5 --bg navy                # Navy background
+  python %(prog)s -l 5 --bg "#1a1a2e"           # Custom hex background
+  python %(prog)s -l 5 --line-color cyan        # Solid cyan lines (no gradient)
+  python %(prog)s -l 5 --bg white --cmap viridis  # White bg with gradient
         """
     )
 
@@ -70,6 +110,21 @@ Examples:
         type=str,
         default=default_cmap,
         help=f'Matplotlib colormap name (default: {default_cmap})'
+    )
+
+    parser.add_argument(
+        '--bg', '--background',
+        type=str,
+        default='black',
+        dest='background',
+        help='Background color. Presets: black, white, dark-gray, light-gray, navy, charcoal. Or hex: #RRGGBB'
+    )
+
+    parser.add_argument(
+        '--line-color',
+        type=str,
+        default=None,
+        help='Solid line color (disables gradient). Presets: white, black, red, green, blue, cyan, magenta, yellow, orange. Or hex: #RRGGBB'
     )
 
     parser.add_argument(
@@ -127,6 +182,8 @@ def run_fractal_demo(fractal_class, fractal_name, args, init_length=10, **fracta
     levels = parse_levels(args.level)
     cmap = get_colormap(args.cmap)
     window_size = (args.size, args.size)
+    background_color = parse_color(args.background, BACKGROUND_PRESETS)
+    line_color = parse_color(args.line_color, LINE_COLOR_PRESETS) if args.line_color else None
 
     for level in levels:
         # Create fresh fractal instance for each level
@@ -147,6 +204,8 @@ def run_fractal_demo(fractal_class, fractal_name, args, init_length=10, **fracta
                 size=window_size,
                 line_width=args.line_width,
                 cmap=cmap,
+                background_color=background_color,
+                line_color=line_color,
             )
             print(f"Saved: {output_file}")
 
@@ -165,6 +224,8 @@ def run_fractal_demo(fractal_class, fractal_name, args, init_length=10, **fracta
                 size=window_size,
                 line_width=args.line_width,
                 cmap=cmap,
+                background_color=background_color,
+                line_color=line_color,
                 edges_per_frame=args.edges_per_frame,
                 duration=args.duration,
                 fps=args.fps,
@@ -180,6 +241,8 @@ def run_fractal_demo(fractal_class, fractal_name, args, init_length=10, **fracta
                 window_size=window_size,
                 line_width=args.line_width,
                 cmap=cmap,
+                background_color=background_color,
+                line_color=line_color,
                 edges_per_frame=args.edges_per_frame,
                 duration=args.duration,
                 fps=args.fps,
