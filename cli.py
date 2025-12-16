@@ -1,5 +1,20 @@
 import argparse
+import os
+from pathlib import Path
 from matplotlib import cm
+
+
+# Output directories (relative to repo root)
+def get_output_dir(export_type):
+    """Get the output directory for the given export type."""
+    # Find repo root by looking for cli.py location
+    repo_root = Path(__file__).parent
+    if export_type == 'mp4':
+        output_dir = repo_root / 'output_videos'
+    else:  # png
+        output_dir = repo_root / 'output_images'
+    output_dir.mkdir(exist_ok=True)
+    return output_dir
 
 
 # Color presets
@@ -187,11 +202,12 @@ def run_fractal_demo(fractal_class, fractal_name, args, init_length=10, **fracta
 
     if args.export == 'mp4' and len(levels) > 1:
         # Multiple levels -> single stitched video
+        output_dir = get_output_dir('mp4')
         if args.output:
-            output_file = args.output
+            output_file = str(output_dir / args.output)
         else:
             level_str = '_'.join(str(l) for l in levels)
-            output_file = f"{fractal_name}_levels_{level_str}.mp4"
+            output_file = str(output_dir / f"{fractal_name}_levels_{level_str}.mp4")
 
         save_multilevel_video(
             fractal_class=fractal_class,
@@ -217,10 +233,12 @@ def run_fractal_demo(fractal_class, fractal_name, args, init_length=10, **fracta
 
         if args.export == 'png':
             # Export to PNG (separate file per level)
+            output_dir = get_output_dir('png')
             if args.output:
-                output_file = args.output if len(levels) == 1 else f"{args.output.rsplit('.', 1)[0]}_level{level}.png"
+                base_name = args.output if len(levels) == 1 else f"{args.output.rsplit('.', 1)[0]}_level{level}.png"
+                output_file = str(output_dir / base_name)
             else:
-                output_file = f"{fractal_name}_level{level}.png"
+                output_file = str(output_dir / f"{fractal_name}_level{level}.png")
 
             save_fractal(
                 fractal,
@@ -237,10 +255,11 @@ def run_fractal_demo(fractal_class, fractal_name, args, init_length=10, **fracta
 
         elif args.export == 'mp4':
             # Single level MP4
+            output_dir = get_output_dir('mp4')
             if args.output:
-                output_file = args.output
+                output_file = str(output_dir / args.output)
             else:
-                output_file = f"{fractal_name}_level{level}.mp4"
+                output_file = str(output_dir / f"{fractal_name}_level{level}.mp4")
 
             save_fractal_video(
                 fractal,

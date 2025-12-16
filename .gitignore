@@ -135,3 +135,7 @@ cython_debug/
 # OS
 .DS_Store
 Thumbs.db
+
+# Output directories
+output_videos/
+output_images/
